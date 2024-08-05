@@ -1,9 +1,8 @@
 ---
 name: image-mirror
-about: 同步镜像到国内仓库,方便快速拉取
+about: 同步镜像到国内仓库, 方便快速拉取
 title: image-mirror
 labels: image-mirror
-assignees: ''
 
 ---
 
