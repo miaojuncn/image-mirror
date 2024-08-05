@@ -66,7 +66,7 @@ jobs:
           TARGET_REGISTRY: ${{ vars.TARGET_REGISTRY }}
         #处理body中的空格和tab和换行，并在结尾添加: ， 写入images.yml 文件
         run: |
-          wget -q  https://github.com/AliyunContainerService/image-syncer/releases/download/v1.5.4/image-syncer-v1.5.5-linux-amd64.tar.gz
+          wget -q  https://github.com/AliyunContainerService/image-syncer/releases/download/v1.5.5/image-syncer-v1.5.5-linux-amd64.tar.gz
           tar zxf image-syncer-v1.5.5-linux-amd64.tar.gz 
           echo "${{ github.event.issue.body }}" > images-init.yml 
           sed -i 's/^[ \t]*//g' images-init.yml
