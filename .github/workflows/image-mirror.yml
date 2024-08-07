@@ -137,10 +137,3 @@ jobs:
             ```
           reactions: hooray
           edit-mode: replace
-
-      - name: Close issue
-        if: ${{ success() && steps.check_body.outputs.is_image_format == 'true'  }}
-        uses: peter-evans/close-issue@v3
-        with:
-          issue-number: ${{ github.event.issue.number }}
-          comment: Auto-closing issue
