@@ -27,8 +27,8 @@
 3. 按照直接使用的方式在自己的仓库提交 issue
 
 ### 直接使用
-提交一个 issue 即可, issue 内容为你无法正常下载的镜像，[示例](https://github.com/miaojuncn/image-mirror/issues/2)如下: 
-![image](https://github.com/user-attachments/assets/f3dc97cd-a786-418e-bd23-23e2c9c542c6)
+提交一个 issue 即可, issue 内容为你无法正常下载的镜像，[示例](https://github.com/miaojuncn/image-mirror/issues/1)如下: 
+![image](https://github.com/user-attachments/assets/b3de9437-dc6e-482d-bd81-e6edaa27d6e7)
 
 就会触发 GitHub action, 同步镜像到`registry.cn-hangzhou.aliyuncs.com`(默认同步到`mj-mirror`的`NAMESPACE`下)
 
