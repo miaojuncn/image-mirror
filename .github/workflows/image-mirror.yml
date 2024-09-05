@@ -1,0 +1,141 @@
+# workflow 名称
+name: image-mirror
+
+# 当新建 issues 时，触发
+on:
+  issues:
+    types:
+      - opened
+      - reopened
+      - edited
+
+# 需要执行的任务列表
+jobs:
+  sync_to_target_registry:
+    runs-on: ubuntu-22.04
+    if: contains(github.event.issue.labels.*.name, 'image-mirror')
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.actor }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Check issue body for image format
+        id: check_body
+        run: |
+          python .github/scripts/check_image_format.py "${{ github.event.issue.body }}"
+
+      - name: Add comment if body is not image format
+        if: steps.check_body.outputs.is_image_format == 'false'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            @${{ github.event.issue.user.login }}
+            !!! 请使用标准镜像格式
+            1. 镜像要带 tag, 如 nginx, 请写为 nginx:latest
+            2. 标题不重要, issue 描述部分, 每行一个镜像不要有其他内容,可以直接更新你的 issue
+          reactions: hooray
+          edit-mode: replace
+
+      - name: Create comment
+        if: ${{ steps.check_body.outputs.is_image_format == 'true' && steps.fc.outputs.comment-id == '' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Syncing image to TargetRegistry, please wait a moment
+            [Check the progress](https://github.com/${{ github.repository_owner }}/image-mirror/actions/runs/${{ github.run_id }})
+          reactions: rocket
+
+      - name: Sync
+        if: steps.check_body.outputs.is_image_format == 'true'
+        id: syncImage
+        env:
+          TARGET_REGISTRY_PASSWORD: ${{ secrets.TARGET_REGISTRY_PASSWORD }}
+          TARGET_REGISTRY_USER: ${{ vars.TARGET_REGISTRY_USER }}
+
+          TARGET_NAMESPACE: ${{ vars.TARGET_NAMESPACE }}
+          TARGET_REGISTRY: ${{ vars.TARGET_REGISTRY }}
+        #处理body中的空格和tab和换行，并在结尾添加: ， 写入images.yml 文件
+        run: |
+          sudo apt install dos2unix
+          wget -q  https://github.com/AliyunContainerService/image-syncer/releases/download/v1.5.5/image-syncer-v1.5.5-linux-amd64.tar.gz
+          tar zxf image-syncer-v1.5.5-linux-amd64.tar.gz
+          echo "${{ github.event.issue.body }}" > images-init.yml
+          dos2unix              images-init.yml
+          sed -i 's/^[ \t]*//g' images-init.yml
+          sed -i 's/[ \t]*$//g' images-init.yml
+          sed -i '/^[  ]*$/d'   images-init.yml
+          img=$(cat images-init.yml)
+          for i in ${img[@]}
+          do
+            tagName=$(echo $i | awk -F "/" '{print $NF}');
+            echo $i: ${TARGET_REGISTRY}/${TARGET_NAMESPACE}/${tagName} >> images.yml;
+            echo ${TARGET_REGISTRY}/${TARGET_NAMESPACE}/${tagName} >> dockerhub-image.yml;
+          done
+          cat images.yml
+          ./image-syncer --auth=./auth.yml --images=./images.yml --proc=10 --retries=3
+
+      - name: Add Success Issues
+        if: ${{ success() && steps.check_body.outputs.is_image_format == 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['succeed']
+            })
+
+      - id: get-comment-body
+        if: steps.check_body.outputs.is_image_format == 'true'
+        run: |
+          dockerhubImage="$(cat dockerhub-image.yml)"
+          dockerhubImage="${dockerhubImage//'%'/'%25'}"
+          dockerhubImage="${dockerhubImage//$'\n'/'%0A'}"
+          dockerhubImage="${dockerhubImage//$'\r'/'%0D'}"
+          echo "::set-output name=dockerhubImage::$dockerhubImage"
+
+          sourceImage="$(cat images-init.yml)"
+          sourceImage="${sourceImage//'%'/'%25'}"
+          sourceImage="${sourceImage//$'\n'/'%0A'}"
+          sourceImage="${sourceImage//$'\r'/'%0D'}"
+          echo "::set-output name=sourceImage::$sourceImage"
+
+      - name: Find Comment
+        if: steps.check_body.outputs.is_image_format == 'true'
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Syncing image to TargetRegistry
+
+      - name: Add Tips
+        if: ${{ success() && steps.check_body.outputs.is_image_format == 'true' }}
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            [Check the progress](https://github.com/${{ github.repository_owner }}/image-mirror/actions/runs/${{ github.run_id }})             
+            ## 镜像信息如下
+            - 新镜像地址
+            ```shell
+            ${{ steps.get-comment-body.outputs.dockerhubImage }}
+            ```
+            - 原镜像地址
+            ```shell
+            ${{ steps.get-comment-body.outputs.sourceImage }}
+            ```
+          reactions: hooray
+          edit-mode: replace
