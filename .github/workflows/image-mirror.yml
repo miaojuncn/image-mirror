@@ -84,7 +84,7 @@ jobs:
           cat images.yml
           ./image-syncer --auth=./auth.yml --images=./images.yml --proc=10 --retries=3
 
-      - name: Add Success Issues
+      - name: Add succeed label
         if: ${{ success() && steps.check_body.outputs.is_image_format == 'true' }}
         uses: actions/github-script@v7
         with:
@@ -96,7 +96,8 @@ jobs:
               labels: ['succeed']
             })
 
-      - id: get-comment-body
+      - name: Generate tips body
+        id: generate-tips-body
         if: steps.check_body.outputs.is_image_format == 'true'
         run: |
           dockerhubImage="$(cat dockerhub-image.yml)"
@@ -131,11 +132,11 @@ jobs:
             ## 镜像信息如下
             - 新镜像地址
             ```shell
-            ${{ steps.get-comment-body.outputs.dockerhubImage }}
+            ${{ steps.generate-tips-body.outputs.dockerhubImage }}
             ```
             - 原镜像地址
             ```shell
-            ${{ steps.get-comment-body.outputs.sourceImage }}
+            ${{ steps.generate-tips-body.outputs.sourceImage }}
             ```
           reactions: hooray
           edit-mode: replace
