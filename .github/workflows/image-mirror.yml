@@ -101,15 +101,9 @@ jobs:
         if: steps.check_body.outputs.is_image_format == 'true'
         run: |
           dockerhubImage="$(cat dockerhub-image.yml)"
-          dockerhubImage="${dockerhubImage//'%'/'%25'}"
-          dockerhubImage="${dockerhubImage//$'\n'/'%0A'}"
-          dockerhubImage="${dockerhubImage//$'\r'/'%0D'}"
           echo "dockerhubImage=$dockerhubImage" >> $GITHUB_OUTPUT
 
           sourceImage="$(cat images-init.yml)"
-          sourceImage="${sourceImage//'%'/'%25'}"
-          sourceImage="${sourceImage//$'\n'/'%0A'}"
-          sourceImage="${sourceImage//$'\r'/'%0D'}"
           echo "sourceImage=$sourceImage" >> $GITHUB_OUTPUT
 
       - name: Find Comment
