@@ -130,11 +130,11 @@ jobs:
             ## 镜像信息如下
             - 新镜像地址
             ```shell
-            ${{ .env.dockerhubImage }}
+            ${{ steps.generate-tips-body.outputs.dockerhubImage }}
             ```
             - 原镜像地址
             ```shell
-            ${{ .env.sourceImage }}
+            ${{ steps.generate-tips-body.outputs.sourceImage }}
             ```
           reactions: hooray
           edit-mode: replace
