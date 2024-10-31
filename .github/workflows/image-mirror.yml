@@ -100,11 +100,15 @@ jobs:
         id: generate-tips-body
         if: steps.check_body.outputs.is_image_format == 'true'
         run: |
-          dockerhubImage="$(cat dockerhub-image.yml)"
-          echo "dockerhubImage=$dockerhubImage" >> $GITHUB_OUTPUT
+          dockerhubImage=$(cat dockerhub-image.yml)
+          echo "dockerhubImage<<EOF" >> $GITHUB_ENV
+          echo $dockerhubImage >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-          sourceImage="$(cat images-init.yml)"
-          echo "sourceImage=$sourceImage" >> $GITHUB_OUTPUT
+          sourceImage=$(cat images-init.yml)
+          echo "sourceImage<<EOF" >> $GITHUB_ENV
+          echo $sourceImage >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Find Comment
         if: steps.check_body.outputs.is_image_format == 'true'
@@ -126,11 +130,11 @@ jobs:
             ## 镜像信息如下
             - 新镜像地址
             ```shell
-            ${{ steps.generate-tips-body.outputs.dockerhubImage }}
+            ${{ .env.dockerhubImage }}
             ```
             - 原镜像地址
             ```shell
-            ${{ steps.generate-tips-body.outputs.sourceImage }}
+            ${{ .env.sourceImage }}
             ```
           reactions: hooray
           edit-mode: replace
