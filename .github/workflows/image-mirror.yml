@@ -70,6 +70,7 @@ jobs:
           wget -q  https://github.com/AliyunContainerService/image-syncer/releases/download/v1.5.5/image-syncer-v1.5.5-linux-amd64.tar.gz
           tar zxf image-syncer-v1.5.5-linux-amd64.tar.gz
           echo "${{ github.event.issue.body }}" > images-init.yml
+          echo $(cat images-init.yml)
           dos2unix              images-init.yml
           sed -i 's/^[ \t]*//g' images-init.yml
           sed -i 's/[ \t]*$//g' images-init.yml
@@ -81,7 +82,7 @@ jobs:
             echo $i: ${TARGET_REGISTRY}/${TARGET_NAMESPACE}/${tagName} >> images.yml;
             echo ${TARGET_REGISTRY}/${TARGET_NAMESPACE}/${tagName} >> dockerhub-image.yml;
           done
-          cat images.yml
+          echo $(cat dockerhub-image.yml)
           ./image-syncer --auth=./auth.yml --images=./images.yml --proc=10 --retries=3
 
       - name: Add succeed label
@@ -101,13 +102,11 @@ jobs:
         if: steps.check_body.outputs.is_image_format == 'true'
         run: |
           dockerhubImage=$(cat dockerhub-image.yml)
-          echo $dockerhubImage
           echo "dockerhubImage<<EOF" >> $GITHUB_OUTPUT
           echo $dockerhubImage >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
           sourceImage=$(cat images-init.yml)
-          echo $sourceImage
           echo "sourceImage<<EOF" >> $GITHUB_OUTPUT
           echo $sourceImage >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
