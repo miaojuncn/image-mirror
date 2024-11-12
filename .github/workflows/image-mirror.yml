@@ -99,16 +99,12 @@ jobs:
         id: generate-tips-body
         if: steps.check_body.outputs.is_image_format == 'true'
         run: |
-          dockerhubImage=$(cat dockerhub-image.yml | xargs -n1 echo)
-          echo $dockerhubImage
           echo "dockerhubImage<<EOF" >> $GITHUB_OUTPUT
-          echo $dockerhubImage >> $GITHUB_OUTPUT
+          cat dockerhub-image.yml >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          sourceImage=$(cat images-init.yml | xargs -n1 echo)
-          echo $sourceImage
           echo "sourceImage<<EOF" >> $GITHUB_OUTPUT
-          echo $sourceImage >> $GITHUB_OUTPUT
+          cat images-init.yml >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Find Comment
