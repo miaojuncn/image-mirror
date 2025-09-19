@@ -15,9 +15,8 @@ jobs:
     runs-on: ubuntu-22.04
     if: contains(github.event.issue.labels.*.name, 'image-mirror')
     concurrency:
-      group: ${{ github.workflow }}-${{ github.actor }}
-      cancel-in-progress: true
-
+      group: ${{ github.workflow }}-${{ github.actor }}-${{ github.event.issue.number }}
+      cancel-in-progress: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -44,6 +43,13 @@ jobs:
             2. 标题不重要, issue 描述部分, 每行一个镜像不要有其他内容,可以直接更新你的 issue
           reactions: hooray
           edit-mode: replace
+
+      - name: Add image-mirror label
+        if: steps.check_body.outputs.is_image_format == 'true'
+        uses: actions-ecosystem/action-add-labels@v1.1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: 'image-mirror'
 
       - name: Create comment
         if: ${{ steps.check_body.outputs.is_image_format == 'true' && steps.fc.outputs.comment-id == '' }}
@@ -135,3 +141,18 @@ jobs:
             ```
           reactions: hooray
           edit-mode: replace
+
+      - name: Add failure comment
+        if: failure() && steps.check_body.outputs.is_image_format == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ❌ 镜像同步失败，请检查以下几点：
+            - 源镜像是否拼写错误？
+            - tag 是否存在如（`latest`、`1.21`）？
+            - 该镜像是否为公开可拉取的镜像？
+
+            可参考 logs：
+            [查看工作详情](https://github.com/${{ github.repository_owner }}/image-mirror/actions/runs/${{ github.run_id }})
+          reactions: confused
